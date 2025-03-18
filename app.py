@@ -3,10 +3,9 @@ import json
 
 # Connect to SQLite database (or create it if it doesn't exist)
 conn = sqlite3.connect("posts.db", isolation_level=None)
-cursor = conn.cursor()
 
 # Create users table with a JSON data column to store user details
-cursor.execute("""
+conn.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     data TEXT NOT NULL
@@ -19,30 +18,30 @@ def create_user(username, posts):
         "username": username,
         "posts": posts
     }
-    cursor.execute("INSERT INTO users (data) VALUES (?)", (json.dumps(data),))
+    conn.execute("INSERT INTO users (data) VALUES (?)", (json.dumps(data),))
     return True
 
 # Function to retrieve all usernames
 def get_all_usernames():
-    cursor.execute("SELECT json_extract(data, '$.username') FROM users")
-    rows = cursor.fetchall()
+    rows = conn.execute("SELECT json_extract(data, '$.username') FROM users").fetchall()
     return [row[0] for row in rows]
 
 # Function to retrieve all posts for a particular user
 def get_posts_for_user(username):
-    cursor.execute("SELECT json_extract(data, '$.posts') FROM users WHERE json_extract(data, '$.username') = ?", (username,))
-    row = cursor.fetchone()
+    #row = conn.execute("SELECT data FROM users WHERE json_extract(data, '$.username') = ?", (username,)).fetchone()
+    row = conn.execute(
+        "SELECT json_extract(data, '$.posts') FROM users WHERE json_extract(data, '$.username') = ?",
+        (username,)).fetchone()
     return json.loads(row[0]) if row else []
 
 # Function to add a post for a user
 def add_post_for_user(username, post):
-    cursor.execute("SELECT data FROM users WHERE json_extract(data, '$.username') = ?", (username,))
-    row = cursor.fetchone()
+    row = conn.execute("SELECT data FROM users WHERE json_extract(data, '$.username') = ?", (username,)).fetchone()
     if row:
         user_data = json.loads(row[0])  # Convert JSON text back to dictionary
         user_data["posts"].append(post)
-        cursor.execute("UPDATE users SET data = ? WHERE json_extract(data, '$.username') = ?", 
-                       (json.dumps(user_data), username))
+        conn.execute("UPDATE users SET data = ? WHERE json_extract(data, '$.username') = ?", 
+                     (json.dumps(user_data), username))
         return True
     else:
         return False

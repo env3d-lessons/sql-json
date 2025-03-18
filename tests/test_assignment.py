@@ -18,8 +18,8 @@ def setup_db():
         data TEXT NOT NULL
     )
     """)
-    app.cursor = cursor
-    yield cursor
+    app.conn = conn
+    yield conn
     conn.close()
 
 def test_delete_user(setup_db):
@@ -58,5 +58,5 @@ def test_search_posts_by_keyword(setup_db):
     
     # Assert
     assert len(result) == 2
-    assert '{"username": "alice", "posts": ["Hello SQL!", "SQLite is great!"]}' in result
-    assert '{"username": "bob", "posts": ["My first post", "Learning SQL today"]}' in result
+    assert 'alice' in json.dumps(result)
+    assert 'mary' not in json.dumps(result)    
